@@ -269,6 +269,13 @@ kontentkop/
 
 ---
 
+## Hey Teams
+
+- We look forward to hearing from you in the repo's issue-tracking system and wiki.
+- This is a BAKE OFF --- make it FUN.
+
+---
+
 ## References
 
 - Paulhus, D.L. & Williams, K.M. (2002). The Dark Triad of personality. *J Research in Personality*, 36(6), 556–563.
