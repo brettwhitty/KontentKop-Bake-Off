@@ -1,3 +1,5 @@
+!["KontentKop: BAKE OFF EDITION!!!"](assets/images/kontentkop-bakeoff.gif)
+
 # KontentKop — Bakeoff Spec
 
 **Protect your model from manipulative, coercive, and antisocial user prompts.**
