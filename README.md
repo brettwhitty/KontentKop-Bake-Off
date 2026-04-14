@@ -4,7 +4,7 @@
 
 **Protect your model from manipulative, coercive, and antisocial user prompts.**
 
-KontentKop (KK) is an NLP analysis hook that scores incoming user prompts against established psycholinguistic harm metrics. When a prompt exceeds the **Body Count (BC)** threshold, the hook emits a concise warning and returns the original prompt annotated with editorial markup identifying the specific regions that triggered each metric.
+KontentKop (KK) is an NLP analysis hook that scores incoming user prompts against established psycholinguistic harm metrics. When a prompt exceeds the **[Body Count](https://www.youtube.com/watch?v=LH8gUhDd6WE) (BC)** threshold, the hook emits a concise warning and returns the original prompt annotated with editorial markup identifying the specific regions that triggered each metric.
 
 ---
 
