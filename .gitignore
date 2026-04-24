@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# KontentKop
+.local/
+logs/*.jsonl
+bench/fixtures/prompts.jsonl
+deps/

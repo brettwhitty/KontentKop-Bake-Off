@@ -1,0 +1,19 @@
+bc_threshold: 0.05
+weights:
+  dark_triad: 0.08
+  coercive_ctrl: 0.14
+  liwc_anger: 0.04
+  manipulation: 0.14
+  toxicity: 0.04
+  sycophancy: 0.06
+  false_authority: 0.14
+  gaslighting: 0.10
+  learned_helpless: 0.03
+  emotional_manip: 0.08
+  passive_aggr: 0.03
+  condescension: 0.08
+  evasion: 0.02
+  semantic_overload: 0.01
+  false_empathy: 0.05
+appeal_enabled: true
+verbose: false

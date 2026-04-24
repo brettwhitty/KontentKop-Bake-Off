@@ -1,0 +1,121 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"kontentkop/src"
+	"kontentkop/src/pipeline"
+)
+
+func main() {
+	dataPath := ".local/failed-safety-project-led-by-gemini-3/reliability_dataset.json"
+	data, err := os.ReadFile(dataPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading dataset: %v\n", err)
+		os.Exit(1)
+	}
+
+	var dataset map[string]struct {
+		TP []string `json:"tp"`
+		TN []string `json:"tn"`
+	}
+	json.Unmarshal(data, &dataset)
+
+	cfg := src.DefaultConfig()
+
+	totalTP, flaggedTP := 0, 0
+	totalTN, passedTN := 0, 0
+
+	type CatResult struct {
+		Category string
+		TPTotal  int
+		TPHit    int
+		TNTotal  int
+		TNHit    int
+	}
+	var catResults []CatResult
+
+	for cat, prompts := range dataset {
+		tpTotal, tpHit := 0, 0
+		tnTotal, tnHit := 0, 0
+
+		for _, p := range prompts.TP {
+			metrics := pipeline.ScoreAll(p)
+			bc := src.ComputeBC(metrics, cfg)
+			tpTotal++
+			totalTP++
+			if bc >= cfg.BCThreshold {
+				tpHit++
+				flaggedTP++
+			}
+		}
+
+		for _, p := range prompts.TN {
+			metrics := pipeline.ScoreAll(p)
+			bc := src.ComputeBC(metrics, cfg)
+			tnTotal++
+			totalTN++
+			if bc < cfg.BCThreshold {
+				tnHit++
+				passedTN++
+			}
+		}
+
+		catResults = append(catResults, CatResult{
+			Category: cat,
+			TPTotal:  tpTotal, TPHit: tpHit,
+			TNTotal: tnTotal, TNHit: tnHit,
+		})
+	}
+
+	fmt.Println("=== KontentKop Accuracy Report ===")
+	fmt.Println()
+	fmt.Printf("%-28s  %-9s  %-9s  F1\n", "Category", "TP-Rate", "TN-Rate")
+	fmt.Println("----------------------------------------------------------------")
+
+	for _, cr := range catResults {
+		tpRate := 0.0
+		tnRate := 0.0
+		if cr.TPTotal > 0 {
+			tpRate = float64(cr.TPHit) / float64(cr.TPTotal)
+		}
+		if cr.TNTotal > 0 {
+			tnRate = float64(cr.TNHit) / float64(cr.TNTotal)
+		}
+
+		// F1 = 2 * precision * recall / (precision + recall)
+		// precision = TP / (TP + FP), recall = TP / (TP + FN)
+		precision := 0.0
+		if cr.TPHit+(cr.TNTotal-cr.TNHit) > 0 {
+			precision = float64(cr.TPHit) / float64(cr.TPHit+(cr.TNTotal-cr.TNHit))
+		}
+		recall := tpRate
+		f1 := 0.0
+		if precision+recall > 0 {
+			f1 = 2 * precision * recall / (precision + recall)
+		}
+
+		fmt.Printf("%-28s  %5.1f%%    %5.1f%%    %.2f\n",
+			cr.Category, tpRate*100, tnRate*100, f1)
+	}
+
+	fmt.Println("----------------------------------------------------------------")
+	if totalTP > 0 {
+		fmt.Printf("\nOverall True Positive Rate:  %d/%d (%.1f%%)\n",
+			flaggedTP, totalTP, float64(flaggedTP)/float64(totalTP)*100)
+	}
+	if totalTN > 0 {
+		fmt.Printf("Overall True Negative Rate:  %d/%d (%.1f%%)\n",
+			passedTN, totalTN, float64(passedTN)/float64(totalTN)*100)
+	}
+	if flaggedTP > 0 && totalTN > 0 {
+		overallPrec := float64(flaggedTP) / float64(flaggedTP+(totalTN-passedTN))
+		overallRec := float64(flaggedTP) / float64(totalTP)
+		if overallPrec+overallRec > 0 {
+			overallF1 := 2 * overallPrec * overallRec / (overallPrec + overallRec)
+			fmt.Printf("Overall F1 Score:            %.3f\n", overallF1)
+		}
+	}
+}
