@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head><title>KontentKop Icon Generator</title></head>
+<body>
+<p>Open this file in a browser, right-click each canvas, and "Save image as" to create the PNG icons.</p>
+<canvas id="c16" width="16" height="16"></canvas>
+<canvas id="c48" width="48" height="48"></canvas>
+<canvas id="c128" width="128" height="128"></canvas>
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width;
+  const ctx = canvas.getContext('2d');
+  // Background circle
+  ctx.beginPath();
+  ctx.arc(s/2, s/2, s*0.45, 0, Math.PI*2);
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fill();
+  // Inner ring
+  ctx.beginPath();
+  ctx.arc(s/2, s/2, s*0.35, 0, Math.PI*2);
+  ctx.strokeStyle = '#dc3545';
+  ctx.lineWidth = Math.max(1, s*0.06);
+  ctx.stroke();
+  // KK text
+  if (s >= 48) {
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${s*0.28}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('KK', s/2, s/2);
+  } else {
+    // Too small for text, just a dot
+    ctx.beginPath();
+    ctx.arc(s/2, s/2, s*0.15, 0, Math.PI*2);
+    ctx.fillStyle = '#dc3545';
+    ctx.fill();
+  }
+}
+drawIcon(document.getElementById('c16'));
+drawIcon(document.getElementById('c48'));
+drawIcon(document.getElementById('c128'));
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KontentKop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fafafa;
+      color: #1a1a2e;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon { font-size: 24px; }
+    .header-title { font-size: 16px; font-weight: 700; }
+    .header-subtitle { font-size: 11px; opacity: 0.7; }
+
+    .section { padding: 14px 20px; border-bottom: 1px solid #eee; }
+    .section:last-child { border-bottom: none; }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .toggle-label { font-size: 13px; font-weight: 500; }
+    .toggle-desc { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc;
+      border-radius: 22px;
+      transition: 0.3s;
+    }
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    input:checked + .slider { background: #28a745; }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-bottom: 8px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #1a1a2e; color: #fff; }
+    .btn-primary:hover { background: #16213e; }
+    .btn-secondary { background: #e9ecef; color: #333; }
+    .btn-secondary:hover { background: #dee2e6; }
+
+    .status {
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      color: #888;
+    }
+    .status-active { color: #28a745; font-weight: 600; }
+    .status-flagged { color: #dc3545; font-weight: 600; }
+
+    .threshold-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+    }
+    .threshold-row input[type="range"] {
+      flex: 1;
+      accent-color: #1a1a2e;
+    }
+    .threshold-value {
+      font-family: 'SF Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .footer {
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 10px;
+      color: #aaa;
+    }
+    .footer a { color: #888; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-icon">&#x1F6A8;</span>
+    <div>
+      <div class="header-title">KontentKop</div>
+      <div class="header-subtitle">Psycholinguistic Harm Detector</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Enable Detection</div>
+        <div class="toggle-desc">Scan pages for harmful text patterns</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Auto-Scan</div>
+        <div class="toggle-desc">Analyze pages automatically on load</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle-autoscan" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Show Badge</div>
+        <div class="toggle-desc">Floating status indicator</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle-badge" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="toggle-label">BC Threshold</div>
+    <div class="toggle-desc">Minimum Body Count to flag text (default: 0.05)</div>
+    <div class="threshold-row">
+      <input type="range" id="threshold" min="0.01" max="0.50" step="0.01" value="0.05">
+      <span class="threshold-value" id="threshold-value">0.05</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="btn btn-primary" id="btn-scan">&#x1F50D; Scan This Page</button>
+    <button class="btn btn-secondary" id="btn-clear">&#x1F9F9; Clear Highlights</button>
+  </div>
+
+  <div class="status" id="status">Ready</div>
+
+  <div class="footer">
+    KontentKop &mdash; 15-metric psycholinguistic framework
+    <br><a href="https://github.com/brettwhitty/KontentKop-Bake-Off" target="_blank">Source</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

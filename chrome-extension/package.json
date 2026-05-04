@@ -1,0 +1,21 @@
+{
+  "name": "chrome-extension",
+  "version": "1.0.0",
+  "description": "Psycholinguistic harm detection for any web page, powered by KontentKop's 15-metric scoring engine with IOA classification levels and p2p community voting.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@orbitdb/core": "^3.0.2",
+    "gun": "^0.2020.1241",
+    "helia": "^6.1.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
