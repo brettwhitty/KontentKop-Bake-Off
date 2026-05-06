@@ -18,6 +18,7 @@ type AnalyzedText struct {
 	Complexity *ComplexityProfile // Lexical diversity, readability
 	Pronouns   *PronounProfile    // Pronoun ratios, Dark Triad signals
 	Politeness *PolitenessProfile // Brown & Levinson face-threat analysis
+	Fallacies  *FallacyResult     // Logical fallacy detection (Jin et al. 2022)
 }
 
 // Sentence wraps a parsed sentence with positional metadata.
