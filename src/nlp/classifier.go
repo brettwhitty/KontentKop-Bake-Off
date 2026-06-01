@@ -254,3 +254,130 @@ func (cs *ClassifierSuite) PredictAll(features []float64) map[string]float64 {
 	}
 	return results
 }
+
+// ── Layer 3: Meta-Classifier (Stacking Ensemble) ──
+
+// MetaClassifier is a third-layer random forest trained on the combined
+// outputs of Layer 1 (KK pattern scores) and Layer 2 (NLP classifier scores).
+// It learns co-occurrence patterns empirically rather than using hand-tuned
+// weights and thresholds.
+//
+// Input features (30 total):
+//   - 15 scores from the KK pattern pipeline (Layer 1)
+//   - 15 probabilities from the NLP classifiers (Layer 2)
+//
+// Output: flag probability (0.0-1.0)
+type MetaClassifier struct {
+	Forest  rf.Forest
+	Trained bool
+}
+
+// MetaTrainingSample holds the combined Layer 1 + Layer 2 scores and ground truth.
+type MetaTrainingSample struct {
+	Layer1Scores []float64 // 15 KK pattern pipeline scores
+	Layer2Scores []float64 // 15 NLP classifier probabilities
+	Flagged      bool      // ground truth: should this text be flagged?
+}
+
+// CombinedFeatures merges Layer 1 and Layer 2 scores into a single feature vector.
+func (ms *MetaTrainingSample) CombinedFeatures() []float64 {
+	combined := make([]float64, 0, 30)
+	combined = append(combined, ms.Layer1Scores...)
+	combined = append(combined, ms.Layer2Scores...)
+	return combined
+}
+
+// TrainMeta trains the meta-classifier on combined Layer 1 + Layer 2 outputs.
+func TrainMeta(samples []MetaTrainingSample) *MetaClassifier {
+	xData := make([][]float64, len(samples))
+	yData := make([]int, len(samples))
+
+	for i, s := range samples {
+		xData[i] = s.CombinedFeatures()
+		if s.Flagged {
+			yData[i] = 1
+		} else {
+			yData[i] = 0
+		}
+	}
+
+	forest := rf.Forest{}
+	forest.Data = rf.ForestData{
+		X:     xData,
+		Class: yData,
+	}
+	forest.Train(200) // 200 trees for the meta-learner
+
+	return &MetaClassifier{
+		Forest:  forest,
+		Trained: true,
+	}
+}
+
+// PredictMeta returns the flag probability from the meta-classifier.
+func (mc *MetaClassifier) PredictMeta(layer1Scores, layer2Scores []float64) float64 {
+	if !mc.Trained {
+		return 0
+	}
+	combined := make([]float64, 0, 30)
+	combined = append(combined, layer1Scores...)
+	combined = append(combined, layer2Scores...)
+
+	votes := mc.Forest.Vote(combined)
+	total := 0.0
+	flagged := 0.0
+	for class, count := range votes {
+		total += count
+		if class == 1 {
+			flagged = count
+		}
+	}
+	if total == 0 {
+		return 0
+	}
+	return flagged / total
+}
+
+// PredictBC applies the co-occurrence principle: only flag when multiple
+// classifiers fire simultaneously, mirroring the KK pattern pipeline's
+// requirement for concurrent signals to reduce false positives.
+//
+// Returns a BC-equivalent score (0.0-1.0) and whether it crosses threshold.
+func (cs *ClassifierSuite) PredictBC(features []float64, weights map[string]float64, threshold float64) (float64, bool) {
+	perMetric := cs.PredictAll(features)
+
+	// Weighted sum (same as KK's ComputeBC)
+	weightedSum := 0.0
+	activeCount := 0
+	highCount := 0
+
+	for key, prob := range perMetric {
+		w, ok := weights[key]
+		if !ok {
+			continue
+		}
+		weightedSum += prob * w
+		if prob > 0.3 {
+			activeCount++
+		}
+		if prob > 0.6 {
+			highCount++
+		}
+	}
+
+	// Co-occurrence bonus — same formula as src/scorer.go
+	cooccurrenceBonus := 0.0
+	if activeCount >= 3 {
+		cooccurrenceBonus = float64(activeCount-2) * 0.04
+	}
+	if highCount >= 2 {
+		cooccurrenceBonus += float64(highCount-1) * 0.03
+	}
+
+	bc := weightedSum + cooccurrenceBonus
+	if bc > 1.0 {
+		bc = 1.0
+	}
+
+	return bc, bc >= threshold
+}

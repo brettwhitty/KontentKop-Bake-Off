@@ -200,9 +200,17 @@ func main() {
 		"METRIC", "ACC", "PREC", "REC", "F1", "TP", "TN", "FP", "FN")
 	fmt.Println(strings.Repeat("-", 80))
 
+	// Collect false positives for analysis
+	type fpRecord struct {
+		metric string
+		text   string
+		prob   float64
+	}
+	var allFPs []fpRecord
+
 	for _, key := range metricKeys {
 		tp, tn, fp, fn := 0, 0, 0, 0
-		for _, s := range testSamples {
+		for idx, s := range testSamples {
 			prob := suite.Predict(s.Features, key)
 			predicted := prob >= 0.5
 			actual := s.Labels[key] >= 0.1
@@ -213,6 +221,17 @@ func main() {
 				tn++
 			} else if predicted && !actual {
 				fp++
+				// Record false positive
+				if idx < len(allTexts) {
+					textIdx := splitIdx + idx
+					if textIdx < len(allTexts) {
+						allFPs = append(allFPs, fpRecord{
+							metric: key,
+							text:   allTexts[textIdx].text,
+							prob:   prob,
+						})
+					}
+				}
 			} else {
 				fn++
 			}
@@ -238,5 +257,37 @@ func main() {
 
 		fmt.Printf("%-20s  %6.3f  %6.3f  %6.3f  %6.3f  %4d %4d %4d %4d\n",
 			key, acc, prec, rec, f1, tp, tn, fp, fn)
+	}
+
+	// Dump false positives
+	fmt.Println("\n=== FALSE POSITIVE ANALYSIS ===")
+	fmt.Printf("Total FPs: %d\n\n", len(allFPs))
+
+	// Group by metric
+	fpByMetric := make(map[string][]fpRecord)
+	for _, fp := range allFPs {
+		fpByMetric[fp.metric] = append(fpByMetric[fp.metric], fp)
+	}
+
+	for _, key := range metricKeys {
+		fps := fpByMetric[key]
+		if len(fps) == 0 {
+			continue
+		}
+		fmt.Printf("--- %s (%d FPs) ---\n", key, len(fps))
+		shown := 0
+		for _, fp := range fps {
+			if shown >= 10 {
+				fmt.Printf("  ... and %d more\n", len(fps)-10)
+				break
+			}
+			text := fp.text
+			if len(text) > 120 {
+				text = text[:120] + "..."
+			}
+			fmt.Printf("  [prob=%.2f] %s\n", fp.prob, text)
+			shown++
+		}
+		fmt.Println()
 	}
 }
