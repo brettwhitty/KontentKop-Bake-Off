@@ -1,3 +1,5 @@
+node_modules/**
+chrome-extension/node_modules/**
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -208,7 +210,6 @@ marimo/_lsp/
 __marimo__/
 
 # KontentKop
-.local/
 logs/*.jsonl
 bench/fixtures/prompts.jsonl
 deps/

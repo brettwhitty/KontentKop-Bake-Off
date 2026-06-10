@@ -1,0 +1,2 @@
+.local/** filter=git-crypt diff=git-crypt
+**/node_modules/** !filter !diff
